@@ -1,0 +1,6 @@
+fastapi
+passlib
+pydantic
+pyjwt[crypto]
+uvicorn
+python-multipart
