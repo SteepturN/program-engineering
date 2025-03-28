@@ -1,0 +1,18 @@
+services:
+  auth-service:
+    build: .
+    command: python -m uvicorn --host 0.0.0.0 --port 5001 --reload src.auth.auth-service:app
+    ports:
+      - 5001:5001
+
+  user-service:
+    build: .
+    command: python -m uvicorn --host 0.0.0.0 --port 5002 --reload src.user.user-service:app
+    ports:
+      - 5002:5002
+
+  message-service:
+    build: .
+    command: python -m uvicorn --host 0.0.0.0 --port 5003 --reload src.message.message-service:app
+    ports:
+      - 5003:5003

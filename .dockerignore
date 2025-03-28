@@ -1,0 +1,6 @@
+*
+!./src/auth
+!./src/database
+!./src/message
+!./src/user
+!./src/requirements.txt

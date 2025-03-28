@@ -1,0 +1,6 @@
+tmp/
+venv
+.structurizr
+workspace.json
+architecture/images
+__pycache__
