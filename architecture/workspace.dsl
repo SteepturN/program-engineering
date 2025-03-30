@@ -81,6 +81,11 @@ workspace "Outluck Email" {
                 findUserByLogin = component "Поиск пользователя по логину"
                 findUserByMask  = component "Поиск пользователя по маске имя и фамилии"
             }
+            passwordManagement = container "Сервис управления паролями" {
+                technology "PostgreSQL"
+                createUser      = component "Создание записи о хеше пароля нового пользователя"
+                findUserByLogin = component "Поиск хеша пароля пользователя по логину"
+            }
             folderManagement = container "Сервис управления папками" {
                 technology "PostgreSQL"
                 createFolder         = component "Создание папки"
@@ -94,11 +99,17 @@ workspace "Outluck Email" {
                 getMessage    = component "Получение письма по коду"
                 createMessage = component "Создание нового письма"
             }
-            userServer    = container "UserServer"    "User auth, search, creation" {
+            userServer    = container "UserServer"    "User search, creation" {
                 technology "Python+FastApi"
                 -> userManagement.createUser              "Создание нового пользователя"
+                -> passwordManagement.createUser          "Создание нового пользователя"
                 -> userManagement.findUserByLogin         "Поиск пользователя по логину"
                 -> userManagement.findUserByMask          "Поиск пользователя по маске имя и фамилии"
+            }
+            authServer    = container "AuthServer"    "User authentication" {
+                technology "Python+FastApi"
+                -> passwordManagement.findUserByLogin     "Аутентификация пользователя"
+                -> webApp.client                          "sends token after authentication"
             }
             messageServer = container "MessageServer" "Receive and send API messages" {
                 technology "Python+FastApi"
@@ -116,12 +127,14 @@ workspace "Outluck Email" {
             folderManagement -> messageServer "ids & folders"
             messageManagement -> messageServer "messages"
             userManagement -> userServer "users"
+            passwordManagement -> authServer "password hash"
         }
         user = person "Пользователь электронной почты" {
             -> webApp.gui "uses"
         }
-        webApp.client -> emailSystem.messageServer "sends requests"
-        webApp.client -> emailSystem.userServer "sends requests"
+        webApp.client -> emailSystem.authServer     "sends token request"
+        webApp.client -> emailSystem.messageServer  "sends message requests"
+        webApp.client -> emailSystem.userServer     "sends user requests"
     }
 
     views {
@@ -129,6 +142,11 @@ workspace "Outluck Email" {
             include *
             autolayout
         }
+        container emailSystem {
+            include *
+            autolayout
+        }
+
         systemContext webApp {
             include *
             autolayout
@@ -137,7 +155,7 @@ workspace "Outluck Email" {
             include *
             autolayout
         }
-        dynamic webApp.app "checkFolder" "user checks a folder" {
+        dynamic webApp.app "checkFolder" "authenticated user checks a folder" {
             1:  user                                              -> webApp.gui                                         "check new messages"
             2:  webApp.gui                                        -> webApp.app.showAllMessagesInFolder                 "get all messages in the folder"
             3:  webApp.app.showAllMessagesInFolder                -> webApp.client                                      "send request"
