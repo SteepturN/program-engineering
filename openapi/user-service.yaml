@@ -13,7 +13,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserResponse'
       security:
       - OAuth2PasswordBearer: []
   /user/{user_login}:
@@ -35,7 +35,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserResponse'
         '422':
           description: Validation Error
           content:
@@ -67,13 +67,18 @@ paths:
         schema:
           type: string
           title: Password
+      - name: role
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/UserRole'
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/UserResponse'
         '422':
           description: Validation Error
           content:
@@ -91,7 +96,7 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
-    User:
+    UserResponse:
       properties:
         username:
           type: string
@@ -106,10 +111,19 @@ components:
           - type: boolean
           - type: 'null'
           title: Disabled
+        role:
+          $ref: '#/components/schemas/UserRole'
       type: object
       required:
       - username
-      title: User
+      - role
+      title: UserResponse
+    UserRole:
+      type: string
+      enum:
+      - admin
+      - user
+      title: UserRole
     ValidationError:
       properties:
         loc:
