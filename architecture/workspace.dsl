@@ -75,66 +75,70 @@ workspace "Outluck Email" {
             editor -> gui "draw update"
         }
         emailSystem = softwareSystem "Электронная почта" {
-            userManagement = container "Сервис управления пользователями" {
+            userDatabase     = container "Users database" {
                 technology "PostgreSQL"
+                tags "Database"
                 createUser      = component "Создание нового пользователя"
                 findUserByLogin = component "Поиск пользователя по логину"
                 findUserByMask  = component "Поиск пользователя по маске имя и фамилии"
             }
-            passwordManagement = container "Сервис управления паролями" {
+            passwordDatabase = container "Passwords database" {
                 technology "PostgreSQL"
+                tags "Database"
                 createUser      = component "Создание записи о хеше пароля нового пользователя"
                 findUserByLogin = component "Поиск хеша пароля пользователя по логину"
             }
-            folderManagement = container "Сервис управления папками" {
+            folderDatabase   = container "Folders database" {
                 technology "PostgreSQL"
+                tags "Database"
                 createFolder         = component "Создание папки"
                 listFolders          = component "Список папок"
                 listMessagesInFolder = component "Получение всех писем в папке"
                 createMessage        = component "Создание нового письма"
                 placeMessageInFolder = component "Размещение сообщения в папке"
             }
-            messageManagement = container "Сервис управления сообщениями" {
+            messageDatabase  = container "Messages Database" {
                 technology "PostgreSQL"
+                tags "Database"
                 getMessage    = component "Получение письма по коду"
                 createMessage = component "Создание нового письма"
             }
-            userServer    = container "UserServer"    "User search, creation" {
+            userService      = container "UserService"    "User search, creation" {
                 technology "Python+FastApi"
-                -> userManagement.createUser              "Создание нового пользователя"
-                -> passwordManagement.createUser          "Создание нового пользователя"
-                -> userManagement.findUserByLogin         "Поиск пользователя по логину"
-                -> userManagement.findUserByMask          "Поиск пользователя по маске имя и фамилии"
+                -> userDatabase.createUser              "Создание нового пользователя"
+                -> passwordDatabase.createUser          "Создание нового пользователя"
+                -> userDatabase.findUserByLogin         "Поиск пользователя по логину"
+                -> userDatabase.findUserByMask          "Поиск пользователя по маске имя и фамилии"
             }
-            authServer    = container "AuthServer"    "User authentication" {
+            authService      = container "AuthService"    "User authentication" {
                 technology "Python+FastApi"
-                -> passwordManagement.findUserByLogin     "Аутентификация пользователя"
-                -> webApp.client                          "sends token after authentication"
+                -> passwordDatabase.findUserByLogin     "Аутентификация пользователя"
+                -> webApp.client                        "sends token after authentication"
             }
-            messageServer = container "MessageServer" "Receive and send API messages" {
+            messageService   = container "MessageService" "Receive and send API messages" {
                 technology "Python+FastApi"
-                -> webApp.client                          "sends result request"
+                -> webApp.client                        "sends result request"
 
-                -> folderManagement.createFolder          "Создание папки"
-                -> folderManagement.listFolders           "Список папок"
-                -> folderManagement.listMessagesInFolder  "Получение всех писем в папке"
-                -> folderManagement.createMessage         "Создание нового письма"
-                -> folderManagement.placeMessageInFolder  "Размещение сообщения в папке"
+                -> folderDatabase.createFolder          "Создание папки"
+                -> folderDatabase.listFolders           "Список папок"
+                -> folderDatabase.listMessagesInFolder  "Получение всех писем в папке"
+                -> folderDatabase.createMessage         "Создание нового письма"
+                -> folderDatabase.placeMessageInFolder  "Размещение сообщения в папке"
 
-                -> messageManagement                      "get messages from ids"
-                -> messageManagement                      "create and store message"
+                -> messageDatabase                      "get messages from ids"
+                -> messageDatabase                      "create and store message"
             }
-            folderManagement -> messageServer "ids & folders"
-            messageManagement -> messageServer "messages"
-            userManagement -> userServer "users"
-            passwordManagement -> authServer "password hash"
+            folderDatabase -> messageService "ids & folders"
+            messageDatabase -> messageService "messages"
+            userDatabase -> userService "users"
+            passwordDatabase -> authService "password hash"
         }
         user = person "Пользователь электронной почты" {
             -> webApp.gui "uses"
         }
-        webApp.client -> emailSystem.authServer     "sends token request"
-        webApp.client -> emailSystem.messageServer  "sends message requests"
-        webApp.client -> emailSystem.userServer     "sends user requests"
+        webApp.client -> emailSystem.authService     "sends token request"
+        webApp.client -> emailSystem.messageService  "sends message requests"
+        webApp.client -> emailSystem.userService     "sends user requests"
     }
 
     views {
@@ -156,19 +160,38 @@ workspace "Outluck Email" {
             autolayout
         }
         dynamic webApp.app "checkFolder" "authenticated user checks a folder" {
-            1:  user                                              -> webApp.gui                                         "check new messages"
-            2:  webApp.gui                                        -> webApp.app.showAllMessagesInFolder                 "get all messages in the folder"
-            3:  webApp.app.showAllMessagesInFolder                -> webApp.client                                      "send request"
-            4:  webApp.client                                     -> emailSystem.messageServer                          "send request to get all messages in a folder"
-            5:  emailSystem.messageServer                         -> emailSystem.folderManagement.listMessagesInFolder  "get ids of messages in a folder"
-            6:  emailSystem.folderManagement.listMessagesInFolder -> emailSystem.messageServer                          "ids"
-            7:  emailSystem.messageServer                         -> emailSystem.messageManagement                      "get messages from ids"
-            8:  emailSystem.messageManagement                     -> emailSystem.messageServer                          "messages"
-            9:  emailSystem.messageServer                         -> webApp.client                                      "send messages for folder"
-            10: webApp.client                                     -> webApp.gui                                         "update page with messages in the folder"
-            11: webApp.gui                                        -> user                                               "show messages in the folder"
+            1:  user                                            -> webApp.gui                                      "check new messages"
+            2:  webApp.gui                                      -> webApp.app.showAllMessagesInFolder              "get all messages in the folder"
+            3:  webApp.app.showAllMessagesInFolder              -> webApp.client                                   "send request"
+            4:  webApp.client                                   -> emailSystem.messageService                      "send request to get all messages in a folder"
+            5:  emailSystem.messageService                      -> emailSystem.folderDatabase.listMessagesInFolder "get ids of messages in a folder"
+            6:  emailSystem.folderDatabase.listMessagesInFolder -> emailSystem.messageService                      "ids"
+            7:  emailSystem.messageService                      -> emailSystem.messageDatabase                     "get messages from ids"
+            8:  emailSystem.messageDatabase                     -> emailSystem.messageService                      "messages"
+            9:  emailSystem.messageService                      -> webApp.client                                   "send messages for folder"
+            10: webApp.client                                   -> webApp.gui                                      "update page with messages in the folder"
+            11: webApp.gui                                      -> user                                            "show messages in the folder"
 
             autolayout
+        }
+        styles {
+            element "Element" {
+                background #009900
+            }
+            element "Person" {
+                background #2D882D
+                shape person
+            }
+            element "Software System" {
+                background #2D882D
+            }
+            element "Container" {
+                background #55aa55
+            }
+            element "Database" {
+                shape cylinder
+            }
+
         }
     }
 }
