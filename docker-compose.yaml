@@ -9,7 +9,6 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: users
     volumes:
       - program-engineering-postgres14-volume:/var/lib/postgresql/data
     ports:
@@ -19,7 +18,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
+    # one db for less memory usage and startup time
+    entrypoint: [ "/bin/bash", "-c", "
+      docker-entrypoint.sh postgres &
+      until pg_isready -U postgres; do sleep 3; done &&
+      psql -U postgres -c 'DROP DATABASE IF EXISTS users;' || true &&
+      psql -U postgres -c 'DROP DATABASE IF EXISTS passwords;' || true &&
+      psql -U postgres -c 'CREATE DATABASE users;' || true &&
+      psql -U postgres -c 'CREATE DATABASE passwords;' || true &&
+      wait"
+    ]
   init-users_db:
     build: .
     command: python ./src/database/init/init.py
@@ -28,7 +36,8 @@ services:
       USERS_DB_PORT: 5432
     depends_on:
         users_db:
-          condition: service_started
+          # https://stackoverflow.com/questions/65778431/using-depends-on-doesnt-start-required-container-but-starts-containers-dependi#76021926
+          condition: service_healthy
 
   auth-service:
     build: .

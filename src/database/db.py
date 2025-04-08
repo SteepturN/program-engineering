@@ -5,6 +5,7 @@ from sqlalchemy import String, Boolean
 from sqlalchemy.orm import DeclarativeBase
 from enum import Enum
 from pydantic import BaseModel
+from sqlalchemy.ext.declarative import declarative_base
 
 
 class UserRole(str, Enum):
@@ -16,12 +17,11 @@ class UserRole(str, Enum):
 # logging.basicConfig()
 # logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
 
+UsersBase = declarative_base()
+PasswordsBase = declarative_base()
 
-class Base(DeclarativeBase):
-    pass
 
-
-class User(Base):
+class User(UsersBase):
     __tablename__ = "user_account"
     username:  Mapped[str]      = mapped_column(String(300), primary_key=True)
     email:     Mapped[str]      = mapped_column(String(300))
@@ -33,7 +33,7 @@ class User(Base):
         return f"User({self.username} {self.email} {self.disabled} {self.role})"
 
 
-class Password(Base):
+class Password(PasswordsBase):
     __tablename__               = "user_passwords"
     # hypothetically should be in other db - so no foreign key
     # username:Mapped[str]      = relationship("User", cascade="all, delete")

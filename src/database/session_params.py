@@ -2,7 +2,7 @@
 import sqlalchemy
 import os
 
-def create_users_db_engine(host=None, port=None):
+def create_db_engine(database, host, port):
     users_db_address = os.environ.get('USERS_DB_ADDRESS', None)
     users_db_port = os.environ.get('USERS_DB_PORT', None)
 
@@ -16,8 +16,15 @@ def create_users_db_engine(host=None, port=None):
 
     user = 'postgres'
     password = 'postgres'
-    database = 'users'
 
     return sqlalchemy.create_engine(
         url=f"postgresql://{user}:{password}@{host}:{port}/{database}"
     )
+
+
+
+def create_users_db_engine(host=None, port=None):
+    return create_db_engine('users', host, port)
+
+def create_passwords_db_engine(host=None, port=None):
+    return create_db_engine('passwords', host, port)

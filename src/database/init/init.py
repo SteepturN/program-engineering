@@ -3,16 +3,18 @@
 import db
 import user_db
 import password_db
-from session_params import create_users_db_engine
+from session_params import create_users_db_engine, create_passwords_db_engine
 from faker import Faker
 fake = Faker()
 
-engine = create_users_db_engine()
-db.User.__table__.drop(engine, checkfirst=True)
-db.Password.__table__.drop(engine, checkfirst=True)
+users_engine = create_users_db_engine()
+passwords_engine = create_passwords_db_engine()
+db.User.__table__.drop(users_engine, checkfirst=True)
+db.Password.__table__.drop(passwords_engine, checkfirst=True)
 
 
-db.Base.metadata.create_all(engine)
+db.UsersBase.metadata.create_all(users_engine)
+db.PasswordsBase.metadata.create_all(passwords_engine)
 
 
 

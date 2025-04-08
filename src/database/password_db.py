@@ -6,9 +6,9 @@ from sqlalchemy.sql.expression import select
 
 
 from db import User, Password
-from session_params import create_users_db_engine
+from session_params import create_passwords_db_engine
 
-engine = create_users_db_engine()
+engine = create_passwords_db_engine()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

@@ -42,7 +42,8 @@ async def create_user(
         current_user: Annotated[User, Depends(auth.get_current_active_user)]
 ):
     if not user_db.is_admin(current_user):
-        raise HTTPException(status_code=404, detail="User can't create admin")
+        raise HTTPException(status_code=404,
+                            detail="You don't have rights for user creation")
     new_user = User(username=username, email=email, disabled=False, role=role)
     if not (res := user_db.add_user(new_user)):
         raise HTTPException(status_code=404, detail="User already exist")

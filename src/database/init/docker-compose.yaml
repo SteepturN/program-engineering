@@ -10,7 +10,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: users
+      # POSTGRES_DB: users
       # POSTGRES_HOST_AUTH_METHOD: trust # https://stackoverflow.com/a/78540259
 
     # https://docs.docker.com/engine/storage/volumes/#start-a-container-with-a-volume
@@ -28,3 +28,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    entrypoint: [ "/bin/bash", "-c", "
+      docker-entrypoint.sh postgres &
+      until pg_isready -U postgres; do sleep 3; done &&
+      psql -U postgres -c 'DROP DATABASE IF EXISTS users;' || true &&
+      psql -U postgres -c 'DROP DATABASE IF EXISTS passwords;' || true &&
+      psql -U postgres -c 'CREATE DATABASE users;' || true &&
+      psql -U postgres -c 'CREATE DATABASE passwords;' || true &&
+      wait"
+    ]
