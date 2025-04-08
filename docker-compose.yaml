@@ -1,18 +1,58 @@
+volumes:
+  program-engineering-postgres14-volume:
+
 services:
+  users_db:
+    image: postgres:14
+    restart: always
+    shm_size: 10mb
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: users
+    volumes:
+      - program-engineering-postgres14-volume:/var/lib/postgresql/data
+    ports:
+      - 5004:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  init-users_db:
+    build: .
+    command: python ./src/database/init/init.py
+    environment:
+      USERS_DB_ADDRESS: users_db
+      USERS_DB_PORT: 5432
+    depends_on:
+        users_db:
+          condition: service_started
+
   auth-service:
     build: .
     command: python -m uvicorn --host 0.0.0.0 --port 5001 --reload src.auth.auth-service:app
     ports:
       - 5001:5001
+    environment:
+      USERS_DB_ADDRESS: users_db
+      USERS_DB_PORT: 5432
 
   user-service:
     build: .
     command: python -m uvicorn --host 0.0.0.0 --port 5002 --reload src.user.user-service:app
     ports:
       - 5002:5002
+    environment:
+      USERS_DB_ADDRESS: users_db
+      USERS_DB_PORT: 5432
 
   message-service:
     build: .
     command: python -m uvicorn --host 0.0.0.0 --port 5003 --reload src.message.message-service:app
     ports:
       - 5003:5003
+    environment:
+      USERS_DB_ADDRESS: users_db
+      USERS_DB_PORT: 5432

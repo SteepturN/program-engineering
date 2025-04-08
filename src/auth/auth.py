@@ -47,12 +47,13 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         raise credentials_exception
     user = payload.get("sub", None)
     if not user:
+        print("can't extract user from payload")
         raise credentials_exception
     type, username = user.split('\n')
     user = user_db.get_user(
-        type=type,
         username=username)
     if user is None:
+        print("can't find user in db")
         raise credentials_exception
     return user
 

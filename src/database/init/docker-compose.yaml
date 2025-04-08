@@ -1,0 +1,30 @@
+# test postgres container
+volumes:
+  program-engineering-postgres-database:
+
+services:
+  db:
+    image: postgres:14
+    restart: always
+    shm_size: 10mb
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: users
+      # POSTGRES_HOST_AUTH_METHOD: trust # https://stackoverflow.com/a/78540259
+
+    # https://docs.docker.com/engine/storage/volumes/#start-a-container-with-a-volume
+    # If you start a container with a volume that doesn't yet exist,
+    # Docker creates the volume for you.
+    # https://docs.docker.com/engine/storage/volumes/#use-a-volume-with-docker-compose
+    # Running docker compose up for the first time creates a volume.
+    # Docker reuses the same volume when you run the command subsequently.
+    volumes: #[<volume-name>:]<mount-path>[:opts]
+      - program-engineering-postgres-database:/var/lib/postgresql/data
+    ports:
+      - 5004:5432
+    healthcheck: # https://stackoverflow.com/a/79403018
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
