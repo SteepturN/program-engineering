@@ -53,3 +53,10 @@ class UserResponse(BaseModel):
     def __init__(self, user: User):
         super().__init__(username=user.username, email=user.email,
                          disabled=user.disabled, role=user.role)
+
+
+class Message(BaseModel):
+    id: str
+    from_email: str
+    to_email: str
+    data: str

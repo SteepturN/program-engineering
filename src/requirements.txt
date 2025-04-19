@@ -4,6 +4,9 @@ pydantic
 pyjwt[crypto]
 uvicorn
 python-multipart
+
 SQLAlchemy
 psycopg2-binary
 Faker
+
+pymongo

@@ -3,6 +3,10 @@
 import db
 import user_db
 import password_db
+import message_db
+# https://stackoverflow.com/a/8566951
+# MongoDB creates databases and collections automatically for you if they
+# don't exist already.
 from session_params import create_users_db_engine, create_passwords_db_engine
 from faker import Faker
 fake = Faker()
@@ -37,3 +41,4 @@ for i in range(100):
                    role=db.UserRole.user)
     user_db.add_record_user_db(user)
     password_db.add_record_password_db(user, str(hash(user)))
+    message_db.add_record_messages_db(user, fake.email(), fake.text())

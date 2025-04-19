@@ -98,7 +98,7 @@ workspace "Outluck Email" {
                 placeMessageInFolder = component "Размещение сообщения в папке"
             }
             messageDatabase  = container "Messages Database" {
-                technology "PostgreSQL"
+                technology "MongoDB"
                 tags "Database"
                 getMessage    = component "Получение письма по коду"
                 createMessage = component "Создание нового письма"

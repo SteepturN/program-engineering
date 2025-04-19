@@ -1,16 +1,34 @@
+# https://stackoverflow.com/a/30173220
+# docker exec -it <mycontainer> bash
+# https://stackoverflow.com/a/44769468
+# docker run -it image_name sh
 volumes:
-  program-engineering-postgres14-volume:
+  postgres14-volume:
+  mongo-volume:
 
 services:
+  # https://stackoverflow.com/questions/76201574/how-to-change-mongodb-password-in-docker-compose#76207336
+  messages_db:
+    image: mongo
+    restart: always
+    env_file: .env
+    healthcheck:
+      # https://stackoverflow.com/a/74709736
+      test: ["CMD","mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    volumes:
+      - mongo-volume:/data/db
+
   users_db:
     image: postgres:14
     restart: always
     shm_size: 10mb
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+    env_file: .env
     volumes:
-      - program-engineering-postgres14-volume:/var/lib/postgresql/data
+      - postgres14-volume:/var/lib/postgresql/data
     ports:
       - 5004:5432
     healthcheck:
@@ -19,6 +37,7 @@ services:
       timeout: 5s
       retries: 5
     # one db for less memory usage and startup time
+    # https://stackoverflow.com/questions/46668233/multiple-databases-in-docker-and-docker-compose#62944006
     entrypoint: [ "/bin/bash", "-c", "
       docker-entrypoint.sh postgres &
       until pg_isready -U postgres; do sleep 3; done &&
@@ -31,12 +50,12 @@ services:
   init-users_db:
     build: .
     command: python ./src/database/init/init.py
-    environment:
-      USERS_DB_ADDRESS: users_db
-      USERS_DB_PORT: 5432
+    env_file: .env
     depends_on:
         users_db:
           # https://stackoverflow.com/questions/65778431/using-depends-on-doesnt-start-required-container-but-starts-containers-dependi#76021926
+          condition: service_healthy
+        messages_db:
           condition: service_healthy
 
   auth-service:
@@ -44,24 +63,40 @@ services:
     command: python -m uvicorn --host 0.0.0.0 --port 5001 --reload src.auth.auth-service:app
     ports:
       - 5001:5001
-    environment:
-      USERS_DB_ADDRESS: users_db
-      USERS_DB_PORT: 5432
+    env_file: .env
+    depends_on:
+        users_db:
+          condition: service_healthy
+
 
   user-service:
     build: .
     command: python -m uvicorn --host 0.0.0.0 --port 5002 --reload src.user.user-service:app
     ports:
       - 5002:5002
-    environment:
-      USERS_DB_ADDRESS: users_db
-      USERS_DB_PORT: 5432
+    env_file: .env
+    depends_on:
+        users_db:
+          condition: service_healthy
 
   message-service:
     build: .
     command: python -m uvicorn --host 0.0.0.0 --port 5003 --reload src.message.message-service:app
     ports:
       - 5003:5003
-    environment:
-      USERS_DB_ADDRESS: users_db
-      USERS_DB_PORT: 5432
+    # https://stackoverflow.com/a/61357756
+    env_file: .env
+    depends_on:
+        messages_db:
+          condition: service_healthy
+
+    # https://docs.docker.com/compose/gettingstarted/#step-4-edit-the-compose-file-to-use-compose-watch
+    # docker compose up --watch
+    develop:
+      watch:
+        # copies when something is updated, but image is not changed
+        # - next docker compose up will be the same
+        # https://docs.docker.com/compose/how-tos/file-watch/
+        - action: sync # don't need to sync+restart - uvicorn restarts
+          path: ./src
+          target: /app/src/
