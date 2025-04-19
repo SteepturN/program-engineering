@@ -4,12 +4,12 @@
 # docker run -it image_name sh
 volumes:
   postgres14-volume:
-  mongo-volume:
+  mongo5.0-volume:
 
 services:
   # https://stackoverflow.com/questions/76201574/how-to-change-mongodb-password-in-docker-compose#76207336
   messages_db:
-    image: mongo
+    image: mongo:5.0
     restart: always
     env_file: .env
     healthcheck:
@@ -20,7 +20,7 @@ services:
       retries: 5
       start_period: 5s
     volumes:
-      - mongo-volume:/data/db
+      - mongo5.0-volume:/data/db
 
   users_db:
     image: postgres:14

@@ -20,7 +20,7 @@ else
     export COMPOSE_BAKE=true
     docker compose down --remove-orphans
     docker volume rm program-engineering_postgres14-volume
-    docker volume rm program-engineering_mongo-volume
+    docker volume rm program-engineering_mongo5.0-volume
     docker compose build
     docker compose up
 fi
