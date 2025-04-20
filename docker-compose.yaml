@@ -10,7 +10,7 @@ services:
   # https://stackoverflow.com/questions/76201574/how-to-change-mongodb-password-in-docker-compose#76207336
   messages_db:
     image: mongo:5.0
-    restart: always
+    restart: unless-stopped
     env_file: .env
     healthcheck:
       # https://stackoverflow.com/a/74709736
@@ -24,7 +24,7 @@ services:
 
   users_db:
     image: postgres:14
-    restart: always
+    restart: unless-stopped
     shm_size: 10mb
     env_file: .env
     volumes:
