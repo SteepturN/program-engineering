@@ -35,7 +35,7 @@ workspace "Outluck Email" {
         webApp = softwareSystem "Пользовательское приложение в браузере" {
             // there could be local folders on the PC,
             // but this would be a desktop app
-
+            tags "webApp"
             client = container "Client" "Receive and send API messages from web app" {
                 technology "JavaScript+Fetch API+DOM"
             }
@@ -103,6 +103,17 @@ workspace "Outluck Email" {
                 getMessage    = component "Получение письма по коду"
                 createMessage = component "Создание нового письма"
             }
+            userCache     = container "Users cache" {
+                technology "Redis"
+                tags "Cache"
+                findUserByLogin = component "Поиск кешированного пользователя по логину"
+            }
+            passwordCache     = container "Passwords cache" {
+                technology "Redis"
+                tags "Cache"
+                findUserByLogin = component "Поиск кешированного пользователя по логину"
+            }
+
             userService      = container "UserService"    "User search, creation" {
                 technology "Python+FastApi"
                 -> userDatabase.createUser              "Создание нового пользователя"
@@ -130,6 +141,10 @@ workspace "Outluck Email" {
             }
             folderDatabase -> messageService "ids & folders"
             messageDatabase -> messageService "messages"
+            userDatabase.findUserByLogin -> userCache.findUserByLogin "find cached user by username"
+            passwordDatabase.findUserByLogin -> passwordCache.findUserByLogin "find cached password hash by username"
+            userCache.findUserByLogin -> userDatabase.findUserByLogin "cached user"
+            passwordCache.findUserByLogin -> passwordDatabase.findUserByLogin "cached password hash"
             userDatabase -> userService "users"
             passwordDatabase -> authService "password hash"
         }
@@ -178,6 +193,9 @@ workspace "Outluck Email" {
             element "Element" {
                 background #009900
             }
+            element "webApp" {
+                shape MobileDevicePortrait
+            }
             element "Person" {
                 background #2D882D
                 shape person
@@ -191,7 +209,9 @@ workspace "Outluck Email" {
             element "Database" {
                 shape cylinder
             }
-
+            element "Cache" {
+                shape hexagon
+            }
         }
     }
 }
