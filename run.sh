@@ -5,8 +5,9 @@ if [[ $1 == "local" ]]; then
     export USERS_DB_ADDRESS="127.0.0.1"
     export USERS_DB_PORT="5004"
     source ./src/venv/bin/activate
+    # pip install -r ./src/requirements.txt
     docker compose --file ./src/database/init/docker-compose.yaml up -d
-    sleep 30
+    read
     ./src/database/init/init.py
     uvicorn --port 5001 --reload src.auth.auth-service:app &
     uvicorn --port 5002 --reload src.user.user-service:app &

@@ -32,6 +32,12 @@ class User(UsersBase):
     def __repr__(self) -> str:
         return f"User({self.username} {self.email} {self.disabled} {self.role})"
 
+    def asdict(self):
+        return {'username': self.username,
+                'email': self.email,
+                'disabled': self.disabled,
+                'role': self.role}
+
 
 class Password(PasswordsBase):
     __tablename__               = "user_passwords"
@@ -42,6 +48,10 @@ class Password(PasswordsBase):
 
     def __repr__(self) -> str:
         return f"Password({self.username} {self.hashed_password})"
+
+    def asdict(self):
+        return {'username': self.username,
+                'hashed_password': self.hashed_password}
 
 
 class UserResponse(BaseModel):

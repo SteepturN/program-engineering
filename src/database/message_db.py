@@ -20,7 +20,11 @@ def create_message(_id, from_email, to_email, data):
 
 
 def get_record_messages_db(current_user: User, message_id: str):
-    result = messages_db.find_one({'_id': ObjectId(message_id)})
+    try:
+        result = messages_db.find_one({'_id': ObjectId(message_id)})
+    except Exception as e:
+        print(e)
+        result = None
     if not result or result['from_email'] != current_user.email:
         return None
     result['_id'] = message_id

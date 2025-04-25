@@ -34,7 +34,7 @@ admin = db.User(
 user_db.add_record_user_db(admin)
 password_db.add_record_password_db(admin, "secret")
 
-for i in range(100):
+for i in range(10):
     user = db.User(username=fake.unique.name() + "_" + fake.unique.name(),
                    email=fake.unique.email(),
                    disabled=False,

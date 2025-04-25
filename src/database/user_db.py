@@ -79,5 +79,4 @@ def delete_user(user: User):
 
 
 def is_admin(user: User):
-    if user:
-        return user.role == 'admin'
+    return user and user.role == 'admin'
