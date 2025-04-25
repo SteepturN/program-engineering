@@ -2,6 +2,7 @@
 # docker exec -it <mycontainer> bash
 # https://stackoverflow.com/a/44769468
 # docker run -it image_name sh
+
 volumes:
   postgres14-volume:
   mongo5.0-volume:
@@ -10,6 +11,7 @@ services:
   # https://stackoverflow.com/questions/76201574/how-to-change-mongodb-password-in-docker-compose#76207336
   messages_db:
     image: mongo:5.0
+    # https://www.baeldung.com/ops/docker-compose-restart-policies
     restart: unless-stopped
     env_file: .env
     healthcheck:
@@ -32,7 +34,7 @@ services:
     ports:
       - 5004:5432
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres && cat /healthy.txt"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -45,18 +47,20 @@ services:
       psql -U postgres -c 'DROP DATABASE IF EXISTS passwords;' || true &&
       psql -U postgres -c 'CREATE DATABASE users;' || true &&
       psql -U postgres -c 'CREATE DATABASE passwords;' || true &&
+      echo done > /healthy.txt &&
       wait"
     ]
+
   init-users_db:
     build: .
     command: python ./src/database/init/init.py
     env_file: .env
     depends_on:
-        users_db:
-          # https://stackoverflow.com/questions/65778431/using-depends-on-doesnt-start-required-container-but-starts-containers-dependi#76021926
-          condition: service_healthy
-        messages_db:
-          condition: service_healthy
+      users_db:
+        # https://stackoverflow.com/questions/65778431/using-depends-on-doesnt-start-required-container-but-starts-containers-dependi#76021926
+        condition: service_healthy
+      messages_db:
+        condition: service_healthy
 
   auth-service:
     build: .
@@ -65,8 +69,13 @@ services:
       - 5001:5001
     env_file: .env
     depends_on:
-        users_db:
-          condition: service_healthy
+      users_db:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src/
 
 
   user-service:
@@ -76,8 +85,14 @@ services:
       - 5002:5002
     env_file: .env
     depends_on:
-        users_db:
-          condition: service_healthy
+      users_db:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src/
+
 
   message-service:
     build: .
@@ -87,8 +102,8 @@ services:
     # https://stackoverflow.com/a/61357756
     env_file: .env
     depends_on:
-        messages_db:
-          condition: service_healthy
+      messages_db:
+        condition: service_healthy
 
     # https://docs.docker.com/compose/gettingstarted/#step-4-edit-the-compose-file-to-use-compose-watch
     # docker compose up --watch
