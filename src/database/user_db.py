@@ -4,8 +4,10 @@ from session_params import create_users_db_engine
 import sqlalchemy
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import select
+from cache import Cache
 
 engine = create_users_db_engine()
+users_cache = Cache('users')
 
 
 def delete_record_user_db(username: str):
@@ -25,6 +27,7 @@ def update_record_user_db(username: str, update_params: dict):
     get_user = select(User).where(User.username == username)
     try:
         with Session(engine) as session:
+            session.expire_on_commit = False
             user = session.execute(get_user).scalar_one()
             for key, val in update_params.items():
                 setattr(user, key, val)
@@ -32,7 +35,7 @@ def update_record_user_db(username: str, update_params: dict):
     except sqlalchemy.exc.SQLAlchemyError as e:
         print(e)
         return None
-    return True
+    return user
 
 
 def get_record_user_db(username: str):
@@ -60,11 +63,21 @@ def add_record_user_db(user: User):
 
 
 def get_user(username: str):
-    return get_record_user_db(username)
+    if not (result := users_cache.get(username)):
+        result = get_record_user_db(username)
+        users_cache.set(username, result)
+    return result
 
 
 def add_user(user: User):
+    users_cache.set(user.username, user)
     return add_record_user_db(user)
+
+
+def update_user(username: str, update_params: dict):
+    if result := update_record_user_db(username, update_params):
+        users_cache.set(username, result)
+    return result
 
 
 def delete_user(user: User):
@@ -75,6 +88,7 @@ def delete_user(user: User):
     except sqlalchemy.exc.SQLAlchemyError as e:
         print(e)
         return None
+    users_cache.delete(user.username)
     return True
 
 

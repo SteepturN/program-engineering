@@ -8,6 +8,17 @@ volumes:
   mongo5.0-volume:
 
 services:
+  cache:
+    image: redis
+    command: redis-server
+    ports:
+      - 6379:6379
+    volumes:
+      - ./src/database/config/redis.conf:/usr/local/etc/redis/redis.conf
+    # https://stackoverflow.com/a/70706628
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "redis", "--raw", "incr", "ping" ]
+
   # https://stackoverflow.com/questions/76201574/how-to-change-mongodb-password-in-docker-compose#76207336
   messages_db:
     image: mongo:5.0
@@ -61,6 +72,8 @@ services:
         condition: service_healthy
       messages_db:
         condition: service_healthy
+      cache:
+        condition: service_healthy
 
   auth-service:
     build: .
@@ -70,6 +83,8 @@ services:
     env_file: .env
     depends_on:
       users_db:
+        condition: service_healthy
+      cache:
         condition: service_healthy
     develop:
       watch:
@@ -87,6 +102,8 @@ services:
     depends_on:
       users_db:
         condition: service_healthy
+      cache:
+        condition: service_healthy
     develop:
       watch:
         - action: sync
@@ -103,6 +120,8 @@ services:
     env_file: .env
     depends_on:
       messages_db:
+        condition: service_healthy
+      cache:
         condition: service_healthy
 
     # https://docs.docker.com/compose/gettingstarted/#step-4-edit-the-compose-file-to-use-compose-watch

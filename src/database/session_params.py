@@ -41,3 +41,11 @@ def connect_messages_db_table():
 
     client = pymongo.MongoClient(f'mongodb://{username}:{password}@{host}:{port}')
     return client['messages-database']["messages"]
+
+
+def connect_cache(cache_type):
+    import redis
+    password = os.environ.get('CACHE_PASSWORD', 'redis')
+    host = os.environ.get('CACHE_HOST', 'localhost')
+    db = {'users': 0, 'passwords': 1}.get(cache_type, 2)
+    return redis.Redis(host=host, port=6379, db=db)#, password=password)
