@@ -45,15 +45,17 @@ services:
     ports:
       - 5004:5432
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres && cat /healthy.txt"]
+      test: ["CMD-SHELL", "cat /healthy.txt && pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
     # one db for less memory usage and startup time
     # https://stackoverflow.com/questions/46668233/multiple-databases-in-docker-and-docker-compose#62944006
     entrypoint: [ "/bin/bash", "-c", "
       docker-entrypoint.sh postgres &
-      until pg_isready -U postgres; do sleep 3; done &&
+      rm -f /healthy.txt || true &&
+      until pg_isready -U postgres; do sleep 3; done || true &&
       psql -U postgres -c 'DROP DATABASE IF EXISTS users;' || true &&
       psql -U postgres -c 'DROP DATABASE IF EXISTS passwords;' || true &&
       psql -U postgres -c 'CREATE DATABASE users;' || true &&
@@ -86,6 +88,8 @@ services:
         condition: service_healthy
       cache:
         condition: service_healthy
+      init-users_db:
+        condition: service_completed_successfully
     develop:
       watch:
         - action: sync
@@ -104,6 +108,8 @@ services:
         condition: service_healthy
       cache:
         condition: service_healthy
+      init-users_db:
+        condition: service_completed_successfully
     develop:
       watch:
         - action: sync
@@ -123,6 +129,8 @@ services:
         condition: service_healthy
       cache:
         condition: service_healthy
+      init-users_db:
+        condition: service_completed_successfully
 
     # https://docs.docker.com/compose/gettingstarted/#step-4-edit-the-compose-file-to-use-compose-watch
     # docker compose up --watch
