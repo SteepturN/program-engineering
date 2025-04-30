@@ -6,8 +6,22 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 import password_db
 from auth import ACCESS_TOKEN_EXPIRE_MINUTES, Token, create_access_token
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# https://fastapi.tiangolo.com/tutorial/cors/#simple-requests
+# swagger started to use OPTIONS all of a sudden
+# and
+# without this shit it fucking blows
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.post("/token")
 async def login_for_access_token(
