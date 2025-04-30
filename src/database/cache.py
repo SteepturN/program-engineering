@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from session_params import connect_cache
 from db import User, Password
-
+import redis
 
 def write_transform(value):
     if isinstance(value, bool):
@@ -26,16 +26,20 @@ class Cache:
         }[cache_type]
 
     def set(self, key, value, expire=1000):
+        if value is None:
+            return self.cache.set(key, b"")
         value = {k: write_transform(v) for k, v in value.asdict().items()}
         # print(value, flush=True)
         return self.cache.hset(key, mapping=value)
 
     def get(self, key):
-        if res := self.cache.hgetall(key):
-            res = {k.decode('utf-8'): read_transform(v) for k, v in res.items()}
-            return self.return_type(**res)
-        else:
-            return None
+        try:
+            if res := self.cache.hgetall(key):
+                res = {k.decode('utf-8'): read_transform(v) for k, v in res.items()}
+                return self.return_type(**res)
+        except redis.exceptions.ResponseError:
+            pass
+        return None
 
     def delete(self, key):
         return self.cache.delete(key)
