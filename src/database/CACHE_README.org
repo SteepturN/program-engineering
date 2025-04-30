@@ -1,0 +1,106 @@
+#+title: Cache Readme
+
+* Задание
+1. Для данных, хранящихся в реляционной базе PotgreSQL реализуйте шаблон сквозное чтение и сквозная запись (Пользователь/Клиент …);
+2. В качестве кеша – используйте Redis
+3. Замерьте производительность запросов на чтение данных с и без кеша с использованием утилиты wrk https://github.com/wg/wrk изменяя количество потоков из которых производятся запросы (1, 5, 10)
+4. Актуализируйте модель архитектуры в Structurizr DSL
+5. Ваши сервисы должны запускаться через docker-compose командой docker- compose up (создайте Docker файлы для каждого сервиса)
+
+Рекомендации по C++
+- Используйте фреймворк Poco https://docs.pocoproject.org/current/
+- Пример по работе с Poco Web Servers и Redis
+https://github.com/DVDemon/arch_lecture_examples/tree/main/hl_mai_lab_05
+
+
+Рекомендации по Python:
+- Используйте FastAPI для построения интерфейсов
+- Простой пример применения redis
+https://github.com/DVDemon/architecture_python/tree/main/07_redis
+
+* Результаты замеров
+** 1 поток
+*** С кешем
+#+begin_src bash
+wrk -c 3 -t 1 -d 30s --scrip ./tests/wrk.lua http://localhost:5002/user/admin
+#+end_src
+Running 30s test @ http://localhost:5002/user/admin
+  1 threads and 3 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    45.26ms    1.21ms  64.47ms   74.84%
+    Req/Sec    66.21      6.96    80.00     87.67%
+  1987 requests in 30.04s, 394.27KB read
+Requests/sec:     66.14
+Transfer/sec:     13.12KB
+
+*** без кеша
+#+begin_src bash
+wrk -c 3 -t 1 -d 30s --scrip ./tests/wrk.lua http://localhost:5002/user/admin
+#+end_src
+
+Running 30s test @ http://localhost:5002/user/admin
+  1 threads and 3 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    49.40ms    2.33ms  71.84ms   86.44%
+    Req/Sec    60.67      3.82    70.00     85.00%
+  1821 requests in 30.04s, 361.37KB read
+Requests/sec:     60.61
+Transfer/sec:     12.03KB
+
+** 5 потоков
+*** с кешем
+#+begin_src bash
+wrk -c 10 -t 5 -d 30s --scrip ./tests/wrk.lua http://localhost:5002/user/admin
+#+end_src
+Running 30s test @ http://localhost:5002/user/admin
+  5 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    47.67ms    4.75ms  80.85ms   88.51%
+    Req/Sec    41.91      6.52    60.00     72.47%
+  6292 requests in 30.06s, 1.22MB read
+Requests/sec:    209.33
+Transfer/sec:     41.54KB
+
+*** без кеша
+#+begin_src bash
+wrk -c 10 -t 5 -d 30s --scrip ./tests/wrk.lua http://localhost:5002/user/admin
+#+end_src
+
+Running 30s test @ http://localhost:5002/user/admin
+  5 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    90.63ms   14.84ms 157.95ms   72.89%
+    Req/Sec    22.07      5.94    40.00     74.31%
+  3309 requests in 30.07s, 656.47KB read
+Requests/sec:    110.04
+Transfer/sec:     21.83KB
+
+** 10 потоков
+*** с кешем
+#+begin_src bash
+wrk -c 15 -t 10 -d 30s --scrip ./tests/wrk.lua http://localhost:5002/user/admin
+#+end_src
+
+#+RESULTS:
+Running 30s test @ http://localhost:5002/user/admin
+  10 threads and 15 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    46.91ms    4.50ms  89.52ms   91.17%
+    Req/Sec    21.28      4.14    30.00     81.27%
+  6390 requests in 30.06s, 1.24MB read
+Requests/sec:    212.61
+Transfer/sec:     42.19KB
+
+*** Без кеша
+#+begin_src bash
+wrk -c 15 -t 10 -d 30s --scrip ./tests/wrk.lua http://localhost:5002/user/admin
+#+end_src
+
+Running 30s test @ http://localhost:5002/user/admin
+  10 threads and 15 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    90.50ms   15.65ms 157.64ms   72.39%
+    Req/Sec    11.17      3.64    20.00     83.08%
+  3314 requests in 30.08s, 657.46KB read
+Requests/sec:    110.16
+Transfer/sec:     21.85KB
