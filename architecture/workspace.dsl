@@ -116,7 +116,6 @@ workspace "Outluck Email" {
 
             userService      = container "UserService"    "User search, creation" {
                 technology "Python+FastApi"
-                -> userDatabase.createUser              "Создание нового пользователя"
                 -> passwordDatabase.createUser          "Создание нового пользователя"
                 -> userDatabase.findUserByLogin         "Поиск пользователя по логину"
                 -> userDatabase.findUserByMask          "Поиск пользователя по маске имя и фамилии"
@@ -139,6 +138,12 @@ workspace "Outluck Email" {
                 -> messageDatabase                      "get messages from ids"
                 -> messageDatabase                      "create and store message"
             }
+            kafka = container "kafka" "create users" {
+                technology "kafka"
+                tags "Queue"
+                -> userDatabase.createUser              "Создание нового пользователя"
+            }
+            userService -> kafka "create new user"
             folderDatabase -> messageService "ids & folders"
             messageDatabase -> messageService "messages"
             userDatabase.findUserByLogin -> userCache.findUserByLogin "find cached user by username"
@@ -211,6 +216,10 @@ workspace "Outluck Email" {
             }
             element "Cache" {
                 shape hexagon
+            }
+            // https://docs.structurizr.com/dsl/language#element-style
+            element "Queue" {
+                shape pipe
             }
         }
     }
