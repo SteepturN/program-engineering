@@ -8,7 +8,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pydantic import BaseModel
-import user_db
+import user_changes
 from db import User
 
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
@@ -50,7 +50,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         print("can't extract user from payload")
         raise credentials_exception
     type, username = user.split('\n')
-    user = user_db.get_user(
+    user = user_changes.get_user(
         username=username)
     if user is None:
         print("can't find user in db")
