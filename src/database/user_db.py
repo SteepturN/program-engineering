@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 from db import User
-from session_params import create_users_db_engine
+from session_params import create_users_db_engine, kafka_producer, kafka_topic
 import sqlalchemy
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import select
 from cache import Cache
+import json
+
 
 engine = create_users_db_engine()
 users_cache = Cache('users')
-
+producer = kafka_producer()
 
 def delete_record_user_db(username: str):
     select_user = select(User).where(User.username == username)

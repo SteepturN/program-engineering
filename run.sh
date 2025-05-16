@@ -22,6 +22,7 @@ else
     docker compose down --remove-orphans
     docker volume rm program-engineering_postgres14-volume
     docker volume rm program-engineering_mongo5.0-volume
+    docker volume rm program-engineering_kafka-volume
     docker compose build
     docker compose up
 fi

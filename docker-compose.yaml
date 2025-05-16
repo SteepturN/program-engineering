@@ -6,8 +6,46 @@
 volumes:
   postgres14-volume:
   mongo5.0-volume:
+  kafka-volume:
 
 services:
+  kafka:
+    image: apache/kafka:latest
+    hostname: broker
+    ports:
+      - 9092:9092
+      - 29092:29092
+    env_file: .env
+    volumes:
+      - kafka-volume:/var/lib/kafka/data
+    healthcheck:
+      test: export PATH="$PATH:/opt/kafka/bin/"; echo 'test-message' | kafka-console-producer.sh --bootstrap-server broker:9092 --topic health-check-topic && kafka-console-consumer.sh --bootstrap-server broker:9092 --topic health-check-topic --from-beginning --max-messages 1 | grep 'test-message' &> /dev/null
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 15s
+
+  init-kafka:
+    image: kafka
+    env_file: .env
+    entrypoint: /opt/kafka/bin/kafka-topics.sh --create --bootstrap-server "$KAFKA_HOST:$KAFKA_PORT" --replication-factor 1 --partitions 1 --topic "$KAFKA_TOPIC"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  kafka-consumer:
+    build: .
+    command: /app/src/database/kafka_consumer.py
+    env_file: .env
+    depends_on:
+      init-kafka:
+        condition: service_completed_successfully
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src/
+
   cache:
     image: redis
     command: redis-server
@@ -98,6 +136,8 @@ services:
     env_file: .env
     depends_on:
       init-db:
+        condition: service_completed_successfully
+      init-kafka:
         condition: service_completed_successfully
     develop:
       watch:

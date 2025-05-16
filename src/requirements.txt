@@ -12,3 +12,5 @@ Faker
 pymongo
 
 redis
+
+kafka-python
